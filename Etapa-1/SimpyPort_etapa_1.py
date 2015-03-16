@@ -3,11 +3,11 @@ import random
 import simpy
 import numpy
 import matplotlib.pyplot as plt
-
+from scipy.stats import t
 
 # parametros da simulacao
 RANDOM_SEED = 42 # semente do gerador de numeros aleatorios
-SIM_TIME = 8760.0 # tempo de simulacao
+SIM_TIME = 87600.0 # tempo de simulacao
 NUM_REPLICACOES = 10 # numero de replicacoes
 
 # parâmetros de entrada do modelo
@@ -25,6 +25,11 @@ numNaviosAtendidos = 0 # numero total de navios atendidos
 cargaEntregue = 0.0 # carga (t) total entregue
 debug = False
 
+def amplitudeConfianca(n, desvio):
+    if n < 2:
+        return 0.0
+    else:
+        return t.ppf(0.975,n-1)*desvio/numpy.sqrt(n)
 
 def monitor(env, logFila, freq=1):
     global naviosFila
@@ -108,5 +113,5 @@ for i in range(NUM_REPLICACOES):
 plt.plot(logFila)
 plt.show    
     
-print('Média das replicações: ', numpy.mean(ocupacaoList))
-print("Media de cargas entregues: ", numpy.mean(listcargaEntregue))
+print('Média das replicações: %.2f IC: %.2f' % (numpy.mean(ocupacaoList), amplitudeConfianca(NUM_REPLICACOES, numpy.std(ocupacaoList))))
+print("Media total de cargas entregues: %.f IC: %.f" % (numpy.mean(listcargaEntregue), amplitudeConfianca(NUM_REPLICACOES, numpy.std(ocupacaoList))))
