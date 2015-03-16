@@ -7,14 +7,21 @@ from scipy.stats import t
 
 # parametros da simulacao
 RANDOM_SEED = 42 # semente do gerador de numeros aleatorios
-SIM_TIME = 87600.0 # tempo de simulacao
-NUM_REPLICACOES = 10 # numero de replicacoes
+SIM_TIME = 876000.0 # tempo de simulacao
+NUM_REPLICACOES = 3 # numero de replicacoes
 
 # parâmetros de entrada do modelo
 INTERVALO_CHEGADA = 24.0 # intervalo (h) médio entre chegadas sucessivas de navios
-TEMPO_OPERACAO_MODA = 10.0 # moda da taxa de operacao no berco (tph)
+TEMPO_OPERACAO_MODA = 20.0 # moda da taxa de operacao no berco (tph)
 TEMPO_OPERACAO_MAX = 12.0 # maior valor da taxa de operacao no berco (tph)
 TEMPO_OPERACAO_MIN = 5.0 # maior valor da taxa de operacao no berco (tph)
+TEMPO_ATRACACAO_MIN = 0.8
+TEMPO_ATRACACAO_MEDIO = 1.0
+TEMPO_ATRACACAO_MAX = 2.0
+TEMPO_DESCARREGAMENTO_MEDIO = 12.0
+TEMPO_DESATRACACAO_MIN = 0.9
+TEMPO_DESATRACACAO_MEDIO = 1.2
+TEMPO_DESATRACACAO_MAX = 3.0
 CARGA_NAVIO = 100 # carga (t) do navio
  
 
@@ -59,9 +66,12 @@ def navio(nome, env, berco, debug):
         start = env.now   
         if debug:
             print('%s atraca em %.1f horas.' % (nome, env.now))
-        
-        # Tempo de carregamento
-        yield env.timeout(random.triangular(TEMPO_OPERACAO_MIN, TEMPO_OPERACAO_MODA, TEMPO_OPERACAO_MAX))
+        # Tempo atracacao
+        yield env.timeout(random.triangular(TEMPO_ATRACACAO_MIN, TEMPO_ATRACACAO_MEDIO, TEMPO_ATRACACAO_MAX))
+        # Tempo de descarregamento
+        yield env.timeout(random.expovariate(1/TEMPO_DESCARREGAMENTO_MEDIO))
+        # Tempo de desatracacao
+        yield env.timeout(random.triangular(TEMPO_DESATRACACAO_MIN, TEMPO_DESATRACACAO_MEDIO, TEMPO_DESATRACACAO_MAX))
         if debug:
             print('%s deixa o porto em %.1f horas.' % (nome, env.now))  
 
