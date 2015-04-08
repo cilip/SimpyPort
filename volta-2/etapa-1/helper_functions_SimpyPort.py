@@ -1,6 +1,8 @@
 import numpy as np
 import random
 
+
+
 # bilbioteca de funções auxiliares para o SimPort
 
 
@@ -9,6 +11,7 @@ def discreteDist(values, probabilities):
     values = np.array(values)
     bins = np.add.accumulate(np.array(probabilities))
     result = values[np.digitize(np.random.random_sample(1), bins)]
+    #print(result)
     return result[0]
 
 def cargaNavio(index, cargaClasses):
@@ -37,6 +40,10 @@ def testaBib():
     
 # teste todas as funções da biblioteca
 # testaBib()
+
+
+    
+
 
 
 
