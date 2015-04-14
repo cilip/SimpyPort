@@ -1,6 +1,7 @@
 import simpy
 
 numBercos = 2
+janelaClasse = [[0,0], [8,18]]
 
 def statusMare(env):
     horaAtual = env.now % 24
@@ -11,14 +12,17 @@ def statusMare(env):
     else:
         return 1
     
-def statusMareCape(env):
+def statusMareCape(env, janela):
+# retorna o tempo de espera por maré favorável
     horaAtual = env.now % 24.0
     print (horaAtual)
     
-    if horaAtual < 8.0:
-        return (8-horaAtual)
-    elif horaAtual > 18.0:
-        return (24-horaAtual+8)
+    if horaAtual < janela[0]:
+        return (janela[0]-horaAtual)
+    elif horaAtual > janela[1]:
+        return (24-horaAtual+janela[0])
+    else:
+        return 0
  
 class Bercos (object):
     def __init__(self, env, number):
@@ -57,9 +61,10 @@ def navio(env, bercosStore, classe):
     print ("Navio classe:", classe, "pegou o berço: ", berco.number, " em ", env.now)
     berco.ocupa()
     if classe == 1:
-        tempoMare = statusMareCape(env)
-        yield env.timeout(tempoMare)
-        print ("Cape aguardou mare ", tempoMare)
+        tempoMare = statusMareCape(env, janelaClasse[classe])
+        if tempoMare > 0:
+            yield env.timeout(tempoMare)
+            print ("Cape aguardou mare ", tempoMare)
     print ('Atracou no berço: ',berco.number, " em: ", env.now)
     
     yield env.timeout(20)
