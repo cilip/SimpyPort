@@ -1,9 +1,11 @@
-"""Etapa 2: recepÁ„o marÌtima
+# -*- coding: utf-8 -*-
 
-Existem dois berÁos de atracaÁ„o;
-O berÁo 1 atende no m·ximo Panamax e o berÁo 2 qualquer embarcaÁ„o;
-Para atracar, alÈm dos tempos de atracaÁ„o (volta anterior), o navio deve aguardar as condiÁıes de marÈ favor·veis para Capesizes, que sÛ atracam e desatracam entre 8 e 18h de cada dia;
-Par‚metros de saÌda: tempo aguardando marÈ;"""
+"""Etapa 2: recep√ß√£o mar√≠tima
+
+Existem dois ber√ßos de atraca√ß√£o;
+O ber√ßo 1 atende no m√°ximo Panamax e o ber√ßo 2 qualquer embarca√ß√£o;
+Para atracar, al√©m dos tempos de atraca√ß√£o (volta anterior), o navio deve aguardar as condi√ß√µes de mar√© favor√°veis para Capesizes, que s√≥ atracam e desatracam entre 8 e 18h de cada dia;
+Par√¢metros de sa√≠da: tempo aguardando mar√©;"""
 
 import itertools # count automatico
 import random
@@ -11,8 +13,22 @@ import simpy
 import numpy as np
 import helper_functions_SimpyPort as helper
 import parametros as P
+import bercos_classe as B
+
+ListaBercosClasses=[]
+
+def montaPrioridadeBercos():
+    global ListaBercosClasses
+    
+    for i in range(len(classesNavio)):
+        tempList =[]
+        for j in range(len(BercosPrioridades[i])):
+            if [BercosPrioridades[i][j]] == 1:
+                tempList.append(BercosRequests[j])
+        ListaBercosClasses.append(tempList)    
 
 class Navio(object):
+    import bercos_classe as B
         
     def __init__(self, env, name):
         global cargaTotal
@@ -22,25 +38,17 @@ class Navio(object):
         self.classe = helper.discreteDist(P.classesNavio, P.distClasses)
         self.carga = helper.cargaNavio(P.classesNavio.index(self.classe), P.cargaClasses)
         P.cargaTotal += self.carga
-        self.process = env.process(self.atracacao(env))
+        self.process = env.process(self.B.atracacao(env, B.bercosStore, self.classe))
         if P.debug:
             print(self.classe, self.carga)
         
-    def atracacao(self, env):
-        for i in range(len(P.classesNavio)):
-            if self.classe == P.classesNavio[i]:
-                self.bercos = [P.ListaBercosClasses[i]]
-        start = env.now
-        self.result = yield env.any_of(self.bercos)
-        intervalo_tempo = env.now - start
-        print(intervalo_tempo)
+    def berco(self, env):
+        env.process(B.navio(env, B.bercosStore, self.classe))
+
         
         
-        request.release(self.result)
-
-
-       
 def geraNavio(env):
+  
     while True:
         for i in itertools.count():
             yield env.timeout(random.expovariate(1.0/P.TEMPO_CHEGADA_NAVIO))           
@@ -50,12 +58,13 @@ def geraNavio(env):
     
     
 print('Simulacao - Volta 2')   
-    
+montaPrioridadeBercos
+
 for i in range(P.NUM_REPLICACOES):
     # Create environment and start processes
     env = simpy.Environment()
-    berco1 = simpy.Resource(env, 1) #atende no maximo panamax
-    berco2 = simpy.Resource(env, 1) #atende qualquer embarcacao
+    berco1 = simpy.Resource(env, 1) # atende no maximo panamax
+    berco2 = simpy.Resource(env, 1) # atende qualquer embarcacao
     env.process(geraNavio(env))
     env.run(until=P.SIM_TIME)
     print('A carga total entregue no ano foi %d' %((P.cargaTotal)))

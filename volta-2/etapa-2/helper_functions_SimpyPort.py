@@ -22,7 +22,7 @@ def cargaNavio(index, cargaClasses):
     return int(random.triangular (rangeCarga[0],rangeCarga[2], moda))
 
 def testaBib():
-    classesNavio = ['Handymax','Panamax', 'Babe Cape', 'Capesize', 'VLOC', 'Valemax']
+    classesNavio = [0, 1, 2, 3, 4, 5] #['Handymax','Panamax', 'Babe Cape', 'Capesize', 'VLOC', 'Valemax']
     distClasses = [0.0, 0.6, 0.0, 0.4, 0.0, 0.0]
     cargaClasses = [(60000, 70000, 80000), (80000, 100000, 120000),(120000, 170000, 180000), (200000, 221000, 250000),(250000, 280000, 300000), (370000, 390000, 400000)] # faixas de Carga de cada classe
     
@@ -37,6 +37,10 @@ def testaBib():
             contaPanamax += 1
             
     print ('Panamax gerados: ', contaPanamax/n)
+
+
+    
+    
     
 # teste todas as funções da biblioteca
 # testaBib()

@@ -1,7 +1,9 @@
+
 import simpy
+debug = True
 
 numBercos = 2
-janelaClasse = [[0,0], [8,18]]
+janelaClasse = [[0,8], [8,18]]
 
 def statusMare(env):
     horaAtual = env.now % 24
@@ -13,9 +15,10 @@ def statusMare(env):
         return 1
     
 def statusMareCape(env, janela):
-# retorna o tempo de espera por maré favorável
+# retorna o tempo de espera por mare favoravel
     horaAtual = env.now % 24.0
-    print (horaAtual)
+    if debug:
+        print (horaAtual)
     
     if horaAtual < janela[0]:
         return (janela[0]-horaAtual)
@@ -55,20 +58,21 @@ class Bercos (object):
     
 
 
-def navio(env, bercosStore, classe):
+def atracacao(env, bercosStore, classe):
 
     berco = yield bercosStore.get(lambda berco: berco.classes[classe] == True)
-    print ("Navio classe:", classe, "pegou o berço: ", berco.number, " em ", env.now)
+    if debug:
+        print ("Navio classe:", classe, "pegou o berco: ", berco.number, " em ", env.now)
+    
     berco.ocupa()
+
     if classe == 1:
         tempoMare = statusMareCape(env, janelaClasse[classe])
         if tempoMare > 0:
             yield env.timeout(tempoMare)
-            print ("Cape aguardou mare ", tempoMare)
-    print ('Atracou no berço: ',berco.number, " em: ", env.now)
-    
-    yield env.timeout(20)
-    print ('Desatracou no berço: ', berco.number, " em: ", env.now) 
+            if debug:
+                print ("Cape aguardou mare ", tempoMare)
+    print ('Atracou no berco: ', berco.number, " em: ", env.now) 
     berco.desocupa()
     yield bercosStore.put(berco)
 
@@ -77,15 +81,16 @@ env = simpy.Environment()
 bercosStore = simpy.FilterStore(env, capacity=numBercos)
 bercosStore.items = [Bercos(env, number=i) for i in range(numBercos)]
 
-bercosStore.items[0].carregaClassesAtendidas([1,0,0])
-bercosStore.items[1].carregaClassesAtendidas([1,1,0])
+bercosStore.items[0].carregaClassesAtendidas([1 ,1 ,0, 0, 0, 0])
+bercosStore.items[1].carregaClassesAtendidas([1 ,1 , 1, 1, 1, 1])
 
 for i in range(100):
-    env.process(navio(env, bercosStore, 1))
-    env.process(navio(env, bercosStore, 0))
+    env.process(atracacao(env, bercosStore, 1))
+    env.process(atracacao(env, bercosStore, 0))
 
 
-env.run(until=24)
+env.run(until=10000)
 
 for berco in bercosStore.items:
-    print(berco.number, berco.usages, berco.tempoOcupado)
+    if debug:
+        print(berco.number, berco.usages, berco.tempoOcupado)
