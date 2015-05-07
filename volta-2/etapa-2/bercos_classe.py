@@ -59,14 +59,14 @@ class Bercos (object):
 
 
 def atracacao(env, bercosStore, classe):
-
+    
     berco = yield bercosStore.get(lambda berco: berco.classes[classe] == True)
     if debug:
         print ("Navio classe:", classe, "pegou o berco: ", berco.number, " em ", env.now)
     
     berco.ocupa()
 
-    if classe == 1:
+    if classe == 3:
         tempoMare = statusMareCape(env, janelaClasse[classe])
         if tempoMare > 0:
             yield env.timeout(tempoMare)
@@ -76,21 +76,3 @@ def atracacao(env, bercosStore, classe):
     berco.desocupa()
     yield bercosStore.put(berco)
 
-env = simpy.Environment()
-
-bercosStore = simpy.FilterStore(env, capacity=numBercos)
-bercosStore.items = [Bercos(env, number=i) for i in range(numBercos)]
-
-bercosStore.items[0].carregaClassesAtendidas([1 ,1 ,0, 0, 0, 0])
-bercosStore.items[1].carregaClassesAtendidas([1 ,1 , 1, 1, 1, 1])
-
-for i in range(100):
-    env.process(atracacao(env, bercosStore, 1))
-    env.process(atracacao(env, bercosStore, 0))
-
-
-env.run(until=10000)
-
-for berco in bercosStore.items:
-    if debug:
-        print(berco.number, berco.usages, berco.tempoOcupado)
