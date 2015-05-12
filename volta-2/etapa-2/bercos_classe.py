@@ -1,11 +1,8 @@
 
 import simpy
-import parametros as P
 
 debug = True
 
-numBercos = 2
-janelaClasse = [[0,8], [8,18]]
 
 def statusMare(env):
     horaAtual = env.now % 24
@@ -18,17 +15,25 @@ def statusMare(env):
     
 def statusMareCape(env, janela):
 # retorna o tempo de espera por mare favoravel
-    horaAtual = env.now % 24.0
-    if debug:
-        print ("Testando maré em ", horaAtual)
-    
-    if horaAtual < janela[0]:
-        return (janela[0]-horaAtual)
-    elif horaAtual > janela[1]:
-        return (24-horaAtual+janela[0])
-    else:
-        return 0
- 
+    try:
+        horaAtual = env.now % 24.0
+        if debug:
+            print ("Testando maré em %.1f para a janela" % horaAtual, janela[0][0], janela[0][1], janela[1][0], janela[1][1])
+        
+        if horaAtual < janela[0][0]:
+            return (janela[0][0]-horaAtual)
+        elif horaAtual > janela[0][1]:
+            if horaAtual < janela[1][0]:
+                return (janela[1][0]-horaAtual)
+            elif horaAtual > janela[1][1]:
+                return (24-horaAtual+janela[0][0])
+            else:
+                return 0
+        else:
+            return 0
+    except:
+        print('ERROR: statusMareCape', horaAtual, janela[0][0], janela[0][1], janela[1][0], janela[1][1])
+     
 class Bercos (object):
     def __init__(self, env, number):
         self.number = number
@@ -59,24 +64,3 @@ class Bercos (object):
         if debug:
             print('Berço %i atende às classes' %self.number, self.classes)
     
-
-
-def atracacao(env, bercosStore, classe):
-    # seleciona um berço para atracação do Store de berços
-    if P.debug:
-        print('Novo navio classe %d em fila em: %.2f' % (classe, env.now))
-    berco = yield bercosStore.get(lambda berco: berco.classes[classe] == True)
-    if debug:
-        print ("Navio classe:", classe, "pegou o berco: ", berco.number, " em ", env.now)
-    berco.ocupa(env)
-
-    if classe == 3:
-        tempoMare = statusMareCape(env, janelaClasse[classe])
-        if tempoMare > 0:
-            yield env.timeout(tempoMare)
-            if debug:
-                print ("Cape aguardou mare ", tempoMare)
-    print ('Atracou no berco: ', berco.number, " em: ", env.now) 
-    berco.desocupa(env)
-    yield bercosStore.put(berco)
-
