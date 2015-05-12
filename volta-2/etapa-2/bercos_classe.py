@@ -1,5 +1,7 @@
 
 import simpy
+import parametros as P
+
 debug = True
 
 numBercos = 2
@@ -18,7 +20,7 @@ def statusMareCape(env, janela):
 # retorna o tempo de espera por mare favoravel
     horaAtual = env.now % 24.0
     if debug:
-        print (horaAtual)
+        print ("Testando maré em ", horaAtual)
     
     if horaAtual < janela[0]:
         return (janela[0]-horaAtual)
@@ -37,11 +39,11 @@ class Bercos (object):
         self.req = self.resource.request()
         self.classes = []
         
-    def ocupa(self):
+    def ocupa(self, env):
         yield self.req
         self.start = env.now
 
-    def desocupa(self):
+    def desocupa(self, env):
         self.resource.release(self.req)
         self.usages += 1
         self.tempoOcupado += env.now-self.start
@@ -54,17 +56,19 @@ class Bercos (object):
     
     def carregaClassesAtendidas(self,value):
         self.classes = value
-       
+        if debug:
+            print('Berço %i atende às classes' %self.number, self.classes)
     
 
 
 def atracacao(env, bercosStore, classe):
-    
+    # seleciona um berço para atracação do Store de berços
+    if P.debug:
+        print('Novo navio classe %d em fila em: %.2f' % (classe, env.now))
     berco = yield bercosStore.get(lambda berco: berco.classes[classe] == True)
     if debug:
         print ("Navio classe:", classe, "pegou o berco: ", berco.number, " em ", env.now)
-    
-    berco.ocupa()
+    berco.ocupa(env)
 
     if classe == 3:
         tempoMare = statusMareCape(env, janelaClasse[classe])
@@ -73,6 +77,6 @@ def atracacao(env, bercosStore, classe):
             if debug:
                 print ("Cape aguardou mare ", tempoMare)
     print ('Atracou no berco: ', berco.number, " em: ", env.now) 
-    berco.desocupa()
+    berco.desocupa(env)
     yield bercosStore.put(berco)
 

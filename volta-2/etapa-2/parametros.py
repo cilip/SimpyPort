@@ -1,9 +1,9 @@
 
 #Parametros da simulacao
 RANDOM_SEED = 42 # semente do gerador de numeros aleatorios
-SIM_TIME = 50 # tempo de simulacao
+SIM_TIME = 100 # tempo de simulacao
 NUM_REPLICACOES = 1 # numero de replicacoes
-debug = False
+debug = True
 
 #Parametros de entrada
 TEMPO_CHEGADA_NAVIO = 24.0 #um navio chega a cada 24 horas, em media
@@ -15,15 +15,3 @@ BercosPrioridades = [[1,1], [1,1], [0,1], [0,1], [0,1], [0,1]]
 
 
 ListaBercosClasses = []
-
-
-def montaPrioridadeBercos():
-    global ListaBercosClasses
-    
-    for i in range(len(P.classesNavio)):
-        tempList =[]
-        for j in range(len(P.BercosPrioridades[i])):
-            if [P.BercosPrioridades[i][j]] == 1:
-                tempList.append(P.BercosRequests[j])
-        ListaBercosClasses.append(tempList)
-    print(ListaBercosClasses)
