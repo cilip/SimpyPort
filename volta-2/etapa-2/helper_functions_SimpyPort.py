@@ -8,18 +8,23 @@ import random
 
 def discreteDist(values, probabilities):
     # retorna um dos elementos da array values segundo uma distribuição de probabilidades fornecida
-    values = np.array(values)
-    bins = np.add.accumulate(np.array(probabilities))
-    result = values[np.digitize(np.random.random_sample(1), bins)]
-    #print(result)
-    return result[0]
+    try:
+        values = np.array(values)
+        bins = np.add.accumulate(np.array(probabilities))
+        result = values[np.digitize(np.random.random_sample(1), bins)]
+        #print(result)
+        return result[0]
+    except:
+        print('ERROR: discreteDist')
 
 def cargaNavio(index, cargaClasses):
     # retorna uma capacidade de carga a partir da carga min, média e máxima da classe
-    
-    rangeCarga = cargaClasses[index]
-    moda = (rangeCarga[1]-(rangeCarga[2]+rangeCarga[0])*0.5)/3+(rangeCarga[2]+rangeCarga[0])*0.5
-    return int(random.triangular (rangeCarga[0],rangeCarga[2], moda))
+    try:
+        rangeCarga = cargaClasses[index]
+        moda = (rangeCarga[1]-(rangeCarga[2]+rangeCarga[0])*0.5)/3+(rangeCarga[2]+rangeCarga[0])*0.5
+        return int(random.triangular (rangeCarga[0],rangeCarga[2], moda))
+    except:
+        print('ERROR: cargaNavio')
 
 def testaBib():
     classesNavio = [0, 1, 2, 3, 4, 5] #['Handymax','Panamax', 'Babe Cape', 'Capesize', 'VLOC', 'Valemax']
