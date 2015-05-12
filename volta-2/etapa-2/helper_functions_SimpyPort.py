@@ -5,7 +5,9 @@ import random
 
 # bilbioteca de funções auxiliares para o SimPort
 
-
+def defineSeedNumpy(seed):
+    np.random.seed(seed)
+    
 def discreteDist(values, probabilities):
     # retorna um dos elementos da array values segundo uma distribuição de probabilidades fornecida
     try:

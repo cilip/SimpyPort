@@ -43,15 +43,25 @@ class Bercos (object):
         self.resource =  simpy.Resource(env, 1)
         self.req = self.resource.request()
         self.classes = []
+        self.tempoMare = [0.0, 0.0]
+        self.contaMare = [0, 0]
         
-    def ocupa(self, env):
-        yield self.req
+    def ocupa(self, env, classe):
         self.start = env.now
+        self.classeAtual = classe
+        return self.req
 
     def desocupa(self, env):
         self.resource.release(self.req)
         self.usages += 1
         self.tempoOcupado += env.now-self.start
+        self.classeAtual = 0
+    
+    def mare(self, tempo, tipo):
+        # tipo 0 atracação, 1 desatracação
+        self.tempoMare[tipo] += tempo
+        if tempo > 0:
+            self.contaMare[tipo] += 1
     
     def getNumber(self):
         return self.number

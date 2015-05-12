@@ -1,7 +1,7 @@
 
 #Parametros da simulacao
 RANDOM_SEED = 42 # semente do gerador de numeros aleatorios
-SIM_TIME = 100 # tempo de simulacao
+SIM_TIME = 100.0 # tempo de simulacao
 NUM_REPLICACOES = 1 # numero de replicacoes
 debug = True
 

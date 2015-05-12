@@ -10,7 +10,6 @@
  - Parâmetros de saída: tempo aguardando maré;"""
 
 import itertools # count automatico
-import random
 import simpy
 import helper_functions_SimpyPort as helper
 import parametros as P
@@ -39,14 +38,14 @@ class Navio(object):
         
     def linhaTempo(self, env):
         # atraca
-        yield env.process(self.atraca(env))
+        # note o yield garantindo que só após o termino da operação, o controle volta para a linha seguinte!
+        berco = yield env.process(self.atraca(env))
         
         # opera
-        # note o yield garantindo que só após o termino da operação, o controle volta para a linha seguinte!
         yield env.process(self.opera(env)) 
 
         # desatraca        
-        yield env.process(self.desatraca(env))
+        yield env.process(self.desatraca(env, berco))
         
     def atraca(self, env):
         
@@ -61,29 +60,35 @@ class Navio(object):
         if debug:
             print ("%s classe %i inicia atracação no berço %i em %.2f" % (self.name, self.classe, self.berco, env.now))
 
-        berco.ocupa(env)
+        yield berco.ocupa(env, self.classe)
         
-        yield env.process(self.mare(env))
+        tempoMare = yield env.process(self.mare(env))
+        berco.mare(tempoMare,0)
         
         if P.debug:
             print ('%s classe %i atracou no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         return berco
             
-    def desatraca(self, env):
+    def desatraca(self, env, berco):
+        # rotina de desatracação
+        tempoMare = yield env.process(self.mare(env))
+        berco.mare(tempoMare,1)        
         berco.desocupa(env)
+        bercosStore.put(berco)
         
         if P.debug:
-            print ('%s classe %i desatracou do berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
-        yield bercosStore.put(berco)
+            print ('%s classe %i desatracou do berço %i em %.2f tempo total ocupado: %.1f h' %(self.name, self.classe, self.berco, env.now, berco.tempoOcupado))
         
     def mare(self, env):
         # rotina de controle de maré
+        tempoMare = 0
         if self.classe == 3:
             tempoMare = statusMareCape(env, janelaClasse[self.classe])
             if tempoMare > 0:
                 yield self.env.timeout(tempoMare)
                 if debug:
-                    print ("%s classe cape aguardou mare por %.1f horas" %(self.name, tempoMare))  
+                    print ("%s classe cape aguardou mare por %.1f horas" %(self.name, tempoMare))
+        return tempoMare
         
     def opera(self, env):
         # apenas para teste, colocar aqui a lógica de opeação
@@ -104,30 +109,39 @@ def geraNavio(env):
             Navio(env, "Navio %d" %i)
     
     
-print('Simulacao - Volta 2')
-
-random.seed = P.RANDOM_SEED
+print('Simulacao > Etapa 2 - Volta 2')
+dist.defineSeed(P.RANDOM_SEED)
+helper.defineSeedNumpy(P.RANDOM_SEED)
 
 for i in range(P.NUM_REPLICACOES):
     env = simpy.Environment()
-
+    
+    bercosList = []
     bercosStore = simpy.FilterStore(env, capacity=numBercos)
     bercosStore.items = [Bercos(env, number=i) for i in range(numBercos)]
 
     bercosStore.items[0].carregaClassesAtendidas([1 ,1 ,0, 0, 0, 0])
     bercosStore.items[1].carregaClassesAtendidas([1 ,1 , 1, 1, 1, 1])
-       
+    
+    # monta lista de bercos para a estatística final
+    for berco in bercosStore.items:
+        bercosList.append(berco)
         
-    #montaPrioridadeBercos()
-
     # Create environment and start processes
-        
-    berco1 = simpy.Resource(env, 1) # atende no maximo panamax
-    berco2 = simpy.Resource(env, 1) # atende qualquer embarcacao
+
     env.process(geraNavio(env))
     env.run(until=P.SIM_TIME)
+    print("")
+    print('>> Resultados da simulação')
     print('A carga total entregue no ano foi %d' %(P.cargaTotal))
     
-    for berco in bercosStore.items:
+    for berco in bercosList:
         if debug:
-            print("Berço %i atendeu %d navios e ficou ocupado por %.f horas" % (berco.number, berco.usages, berco.tempoOcupado))
+            print("Berço %i: " %berco.number)
+            print(">> %d navios" %berco.usages)
+            print(">> Ocupado por %.1f horas ou %.2f do tempo" %(berco.tempoOcupado,(berco.tempoOcupado/P.SIM_TIME)))
+            print(">> %.1f h de espera por maré na atracação" %berco.tempoMare[0])
+            print(">> %.1f h de espera por maré na desatracação" %berco.tempoMare[1])
+            print(">> %d navios aguardaram por maré na atracação" %berco.contaMare[0])
+            print(">> %d navios aguardaram por maré na desatracação" %berco.contaMare[1])
+            print("")
