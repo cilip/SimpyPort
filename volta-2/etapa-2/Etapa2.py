@@ -57,6 +57,8 @@ class Navio(object):
         
         berco = yield bercosStore.get(lambda berco: berco.classes[self.classe] == True)
         self.berco = berco.number
+        naviosFila -= 1
+        
         if debug:
             print ("%s classe %i inicia atracação no berço %i em %.2f" % (self.name, self.classe, self.berco, env.now))
 
@@ -115,7 +117,7 @@ helper.defineSeedNumpy(P.RANDOM_SEED)
 
 for i in range(P.NUM_REPLICACOES):
     env = simpy.Environment()
-    
+    logFila = []
     bercosList = []
     bercosStore = simpy.FilterStore(env, capacity=numBercos)
     bercosStore.items = [Bercos(env, number=i) for i in range(numBercos)]
@@ -127,21 +129,24 @@ for i in range(P.NUM_REPLICACOES):
     for berco in bercosStore.items:
         bercosList.append(berco)
         
-    # Create environment and start processes
-
+    # Create environment and start processe
+    env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
     env.run(until=P.SIM_TIME)
     print("")
     print('>> Resultados da simulação')
     print('A carga total entregue no ano foi %d' %(P.cargaTotal))
+    #print('Número médio de navios em fila: %.1f navios')
+    #print('Tempo médio de espera em fila de navios: %.1f horas')
     
     for berco in bercosList:
-        if debug:
-            print("Berço %i: " %berco.number)
-            print(">> %d navios" %berco.usages)
-            print(">> Ocupado por %.1f horas ou %.2f do tempo" %(berco.tempoOcupado,(berco.tempoOcupado/P.SIM_TIME)))
-            print(">> %.1f h de espera por maré na atracação" %berco.tempoMare[0])
-            print(">> %.1f h de espera por maré na desatracação" %berco.tempoMare[1])
-            print(">> %d navios aguardaram por maré na atracação" %berco.contaMare[0])
-            print(">> %d navios aguardaram por maré na desatracação" %berco.contaMare[1])
-            print("")
+        print("Berço %i: " %berco.number)
+        print(">> %d navios" %berco.usages)
+        print(">> Ocupado por %.1f horas ou %.2f do tempo" %(berco.tempoOcupado,(berco.tempoOcupado/P.SIM_TIME)))
+        print(">> %.1f h de espera por maré na atracação" %berco.tempoMare[0])
+        print(">> %.1f h de espera por maré na desatracação" %berco.tempoMare[1])
+        print(">> %d navios aguardaram por maré na atracação" %berco.contaMare[0])
+        print(">> %d navios aguardaram por maré na desatracação" %berco.contaMare[1])
+        print("")
+    logFila = []
+    naviosFila = 0

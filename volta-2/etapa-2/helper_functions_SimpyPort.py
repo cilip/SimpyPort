@@ -44,6 +44,13 @@ def testaBib():
             contaPanamax += 1
             
     print ('Panamax gerados: ', contaPanamax/n)
+    
+def monitor(env, logFila, valor, freq=1):
+    global naviosFila
+    while True:
+        # collect statistics 
+        logFila.append(valor)
+        yield env.timeout(freq)
 
 
     
