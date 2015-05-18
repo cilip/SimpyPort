@@ -15,7 +15,9 @@ import helper_functions_SimpyPort as helper
 import parametros as P
 import distribuicoes as dist
 from bercos_classe import Bercos, statusMareCape
-
+import pandas as pd
+import numpy as np
+from scipy.stats import t
 
 debug = True
 numBercos = 2
@@ -115,6 +117,9 @@ print('Simulacao > Etapa 2 - Volta 2')
 dist.defineSeed(P.RANDOM_SEED)
 helper.defineSeedNumpy(P.RANDOM_SEED)
 
+columns = ['Atracações 1', 'Tempo ocupado 1', 'Atracações 2', 'Tempo ocupado 2', 'Carga entregue']
+df_resultados = pd.DataFrame(columns=columns, index=['Replicação ' + str(i) for i in range(P.NUM_REPLICACOES)])
+
 for i in range(P.NUM_REPLICACOES):
     env = simpy.Environment()
     logFila = []
@@ -133,20 +138,21 @@ for i in range(P.NUM_REPLICACOES):
     env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
     env.run(until=P.SIM_TIME)
-    print("")
-    print('>> Resultados da simulação')
-    print('A carga total entregue no ano foi %d' %(P.cargaTotal))
-    #print('Número médio de navios em fila: %.1f navios')
-    #print('Tempo médio de espera em fila de navios: %.1f horas')
+    df_resultados.ix[i]['Carga entregue'] = P.cargaTotal
     
     for berco in bercosList:
-        print("Berço %i: " %berco.number)
-        print(">> %d navios" %berco.usages)
-        print(">> Ocupado por %.1f horas ou %.2f do tempo" %(berco.tempoOcupado,(berco.tempoOcupado/P.SIM_TIME)))
-        print(">> %.1f h de espera por maré na atracação" %berco.tempoMare[0])
-        print(">> %.1f h de espera por maré na desatracação" %berco.tempoMare[1])
-        print(">> %d navios aguardaram por maré na atracação" %berco.contaMare[0])
-        print(">> %d navios aguardaram por maré na desatracação" %berco.contaMare[1])
-        print("")
+        df_resultados.ix[i]['Atracações '+str(berco.number+1)] = berco.usages
+        df_resultados.ix[i]['Tempo ocupado '+str(berco.number+1)] = berco.tempoOcupado
+         
     logFila = []
     naviosFila = 0
+    P.cargaTotal =0
+    
+medias = df_resultados.mean()
+desvios = df_resultados.std()
+IC = t.ppf(0.975,P.NUM_REPLICACOES-1)*desvios/np.sqrt(P.NUM_REPLICACOES)
+df_resultados.loc['Média'] = medias
+df_resultados.loc['Desvio padrão'] = desvios
+df_resultados.loc['IC inf @ 95%'] = medias - IC
+df_resultados.loc['IC sup @ 95%'] = medias + IC
+print(df_resultados)
