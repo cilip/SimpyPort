@@ -3,9 +3,11 @@
 RANDOM_SEED = 42 # semente do gerador de numeros aleatorios
 SIM_TIME = 8760.0 # tempo de simulacao
 NUM_REPLICACOES = 10 # numero de replicacoes
-debug = True
+debug = False
 
 #Parametros de entrada
+arqInterface = "Interface_SimpyPort.xlsx" # nome do arquivo Excel de Interface
+pathInterface = r"C:\\Users\\medina\\Documents\\GitHub\\SimpyPort\\SimpyPort\\volta-2\\etapa-2\\" # diretorio de trabalho
 
 classesNavio = [0, 1, 2, 3, 4, 5] #['Handymax','Panamax', 'Babe Cape', 'Capesize', 'VLOC', 'Valemax']
 distClasses = [0.0, 0.6, 0.0, 0.4, 0.0, 0.0]

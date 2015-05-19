@@ -2,8 +2,47 @@ import numpy as np
 import random
 
 
+import win32com.client as win32 # carrega o módulo python for windows extension https://github.com/pythonexcels/examples
+
 
 # bilbioteca de funções auxiliares para o SimPort
+
+def abreExcel():
+    # abre o excel (caso ainda não esteja aberto)
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    excel.Visible = True
+    return excel
+ 
+def abrePlanilhaExcel(excel, path, arq):
+    # seleciona e abre uma planilha xlsx
+    for i in range(1,excel.Workbooks.Count):
+        if excel.Workbooks(i).Name == arq:
+            return excel.Workbooks(i)
+    return excel.Workbooks.Open(path+arq) #retorna um workbook
+
+def selecionaPastaExcel(workbook, pasta):
+    # seleciona e retorna a pasta do excel
+    return workbook.Worksheets(pasta) # retorna um worksheet
+
+def preencheCelulaExcel(worksheet, linha, coluna, value):
+    #preenche uma célula do excel
+    worksheet.Cells(linha,coluna).Value = value
+    
+def preencheRangeExcel(worksheet, celula1, celula2, valuesLista):
+    # preenche um range do excel com valores de uma lista
+    worksheet.Range(worksheet.Cells(celula1[0],celula1[1]),worksheet.Cells(celula2[0],celula2[1])).Value = valuesLista
+
+def preencheRangeStrExcel(worksheet, rangeStr, valuesLista):
+    # preenche um range do excel com valores de uma lista
+    worksheet.Range(rangeStr).Value = valuesLista
+
+def salvaPlanilhaExcel(workbook):
+    #salva uma planilha excel
+    workbook.Save()
+
+def fechaExcel(excel):
+    # fecha o excel
+    excel.Application.Quit()
 
 def defineSeedNumpy(seed):
     np.random.seed(seed)

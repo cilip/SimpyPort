@@ -19,7 +19,6 @@ import pandas as pd
 import numpy as np
 from scipy.stats import t
 
-debug = True
 numBercos = 2
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
 naviosFila = 0
@@ -61,7 +60,7 @@ class Navio(object):
         self.berco = berco.number
         naviosFila -= 1
         
-        if debug:
+        if P.debug:
             print ("%s classe %i inicia atracação no berço %i em %.2f" % (self.name, self.classe, self.berco, env.now))
 
         yield berco.ocupa(env, self.classe)
@@ -90,7 +89,7 @@ class Navio(object):
             tempoMare = statusMareCape(env, janelaClasse[self.classe])
             if tempoMare > 0:
                 yield self.env.timeout(tempoMare)
-                if debug:
+                if P.debug:
                     print ("%s classe cape aguardou mare por %.1f horas" %(self.name, tempoMare))
         return tempoMare
         
@@ -156,3 +155,17 @@ df_resultados.loc['Desvio padrão'] = desvios
 df_resultados.loc['IC inf @ 95%'] = medias - IC
 df_resultados.loc['IC sup @ 95%'] = medias + IC
 print(df_resultados)
+
+
+excel = helper.abreExcel()
+wb = helper.abrePlanilhaExcel(excel,P.pathInterface,P.arqInterface)
+ws = helper.selecionaPastaExcel(wb,'Plan1')
+# preenche df no Excel
+helper.preencheRangeExcel(ws,(1,2),(1,6),['Atracações berço 1', 'Tempo ocupado berço 1 (h)', 'Atracações berço 2', 'Tempo ocupado berço 2 (h)', 'Total embarcado (t)'])
+helper.preencheCelulaExcel(ws,2,1,'Média')
+helper.preencheCelulaExcel(ws,3,1,'IC inf @ 95%')
+helper.preencheCelulaExcel(ws,4,1,'IC sup @ 95%')
+helper.preencheRangeExcel(ws,(2,2),(2,6),df_resultados.loc['Média',:].values.tolist())
+helper.preencheRangeExcel(ws,(3,2),(3,6),df_resultados.loc['IC inf @ 95%',:].values.tolist())
+helper.preencheRangeExcel(ws,(4,2),(4,6),df_resultados.loc['IC sup @ 95%',:].values.tolist())
+helper.salvaPlanilhaExcel(wb)

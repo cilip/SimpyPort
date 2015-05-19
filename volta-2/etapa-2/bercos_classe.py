@@ -1,7 +1,7 @@
 
 import simpy
 
-debug = True
+debug = False
 
 
 def statusMare(env):
