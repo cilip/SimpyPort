@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
+"""
+Etapa 3: operação
 
-"""Etapa 2: recepção marítima
-
- - Existem dois berços de atracação;
- - O berço 1 atende no máximo Panamax e o berço 2 qualquer embarcação;
- - Para atracar, além dos tempos de atracação (volta anterior), o navio deve
-   aguardar as condições de maré favoráveis para Capesizes, que só atracam e 
-   desatracam entre 8 e 18h de cada dia;
- - Parâmetros de saída: tempo aguardando maré;"""
-
+Existem três guindastes para operação;
+O navio Panamax opera com no máximo 2 guindastes e o Capesize 3 guindastes;
+Quando um atraca, ele solicita o máximo de guindastes livres;
+Os guindastes entram em manutenção preventiva 10% do tempo no ano (nunca de modo simultâneo), por 3 h, constantes;
+Os guindastes quebram em intervalos exponenciais de 6h, com duração de 1h cada quebra, também exponenciais.
+A taxa nominal de operação dos guindastes é de 1.000 tph;
+O modelo deve fornecer o tempo ocupado, livre, em mp e mc dos guindastes e a taxa comercial do berço para cada tipo de navio;
+"""
 import itertools # count automatico
 import simpy
 import helper_functions_SimpyPort as helper
@@ -72,6 +72,7 @@ class Navio(object):
             print ('%s classe %i atracou no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         return berco
             
+
     def desatraca(self, env, berco):
         # rotina de desatracação
         tempoMare = yield env.process(self.mare(env))
@@ -97,11 +98,26 @@ class Navio(object):
         # apenas para teste, colocar aqui a lógica de opeação
         if P.debug:
             print ('%s classe %i inicia operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
+        
+        if classe == 1: #Panamax
+            #num_maximo de guindastes = 2
+        if classe == 3: #Capesize
+        
         yield self.env.timeout(dist.carregamento())
         if P.debug:
             print ('%s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         P.cargaTotal += self.carga
 
+        
+def processo_guindaste():
+  #Para cada guindaste, verificar se esta livre e se estiver, encontrar embarcacao para utilizar no processo
+    #Exemplo raciocinio:
+    if guindaste1 = free: 
+        guindaste procura embarcacao com menor numero de guindastes ja operantes
+        guindaste associa-se a embarcacao
+        guindaste realiza o processo (com possibilidade de falha durante todo o processo)
+        com termino, guindaste se desvencilha da embarcacao
+        processo se repete
         
         
         
@@ -110,12 +126,59 @@ def geraNavio(env):
         for i in itertools.count(1):
             yield env.timeout(dist.chegadas())           
             Navio(env, "Navio %d" %i)
-    
+ 
+def guindaste(self, env):
+    #sao no total 3 guindastes
+    #maximo de dois guindastes panamax e tres para capesize
+    with guindaste.request(priority = 2) as req:
+        yield req
+        
+        while tempo_descarregamento:
+            try:
+                if debug:
+                    print('%s inicia carregamento em %.1f horas.' % (nome, env.now))  
+
+                start = env.now
+                yield env.timeout(tempo_descarregamento)
+                tempoOcupadoGuindaste += tempo_descarregamento
+                if debug:
+                    print('%s termina carregamento em %.1f horas.' % (nome, env.now))  
+
+                tempo_descarregamento = 0
+            except simpy.Interrupt:
+                if debug:
+                    print('%s sofre quebra de guindaste em %.1f horas.' % (nome, env.now))  
+
+                tempo_descarregamento -= env.now - start
+               
+                
+                if debug:
+                    print('%s guindaste operante em %.1f horas.' % (nome, env.now))
+
+def quebra_guindaste(self, env, berco, guindaste):
+    global broken
+    global tempoQuebraGuindaste
+    while True:
+        yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
+        if not broken:
+            with guindaste.request(priority=1) as req:
+                yield req
+                if debug:
+                    print('Guindaste QUEBROU em %.1f horas.' % (env.now))
+                t1 = env.now
+                broken=True
+                yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONCERTO))
+                if debug:
+                    print('Guindaste LIBERADO em %.1f horas.' % (env.now))
+                t2 = env.now
+                t = t2 - t1
+                tempoQuebraGuindaste += t
+                
+                broken=False   
     
 print('Simulacao > Etapa 2 - Volta 2')
 dist.defineSeed(P.RANDOM_SEED)
 helper.defineSeedNumpy(P.RANDOM_SEED)
-
 columns = ['Atracações 1', 'Tempo ocupado 1', 'Atracações 2', 'Tempo ocupado 2', 'Carga entregue']
 df_resultados = pd.DataFrame(columns=columns, index=['Replicação ' + str(i) for i in range(P.NUM_REPLICACOES)])
 
@@ -134,16 +197,22 @@ for i in range(P.NUM_REPLICACOES):
         bercosList.append(berco)
         
     # Create environment and start processe
+    guindaste1 = simpy.PreemptiveResource(env, capacity = 1)
+    guindaste2 = simpy.PreemptiveResource(env, capacity = 1)
+    guindaste3 = simpy.PreemptiveResource(env, capacity = 1)
     env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
+    env.process(quebra_guindaste(env,guindaste1))
+    env.process(quebra_guindaste(env,guindaste2))
+    env.process(quebra_guindaste(env,guindaste3))
     env.run(until=P.SIM_TIME)
     df_resultados.ix[i]['Carga entregue'] = P.cargaTotal
     
     for berco in bercosList:
         df_resultados.ix[i]['Atracações '+str(berco.number+1)] = berco.usages
         df_resultados.ix[i]['Tempo ocupado '+str(berco.number+1)] = berco.tempoOcupado
-        df_resultados.ix[i][]
-         
+
+
     logFila = []
     naviosFila = 0
     P.cargaTotal =0
