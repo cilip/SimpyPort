@@ -95,13 +95,21 @@ class Navio(object):
         return tempoMare
         
     def opera(self, env):
-        # apenas para teste, colocar aqui a lógica de opeação
         if P.debug:
             print ('%s classe %i inicia operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         
-        if classe == 1: #Panamax
+        if self.classe == 1: #Panamax
             #num_maximo de guindastes = 2
-        if classe == 3: #Capesize
+            self.num_max_guind = 2
+            
+            
+        if self.classe == 3: #Capesize
+            #num_maximo de guindastes = 3
+            self.num_max_guind = 3
+            
+            
+        #colocar funcoes do 'arquivo guindaste'
+            
         
         yield self.env.timeout(dist.carregamento())
         if P.debug:
@@ -109,73 +117,15 @@ class Navio(object):
         P.cargaTotal += self.carga
 
         
-def processo_guindaste():
-  #Para cada guindaste, verificar se esta livre e se estiver, encontrar embarcacao para utilizar no processo
-    #Exemplo raciocinio:
-    if guindaste1 = free: 
-        guindaste procura embarcacao com menor numero de guindastes ja operantes
-        guindaste associa-se a embarcacao
-        guindaste realiza o processo (com possibilidade de falha durante todo o processo)
-        com termino, guindaste se desvencilha da embarcacao
-        processo se repete
-        
-        
         
 def geraNavio(env):
     while 1:
         for i in itertools.count(1):
             yield env.timeout(dist.chegadas())           
             Navio(env, "Navio %d" %i)
+            
  
-def guindaste(self, env):
-    #sao no total 3 guindastes
-    #maximo de dois guindastes panamax e tres para capesize
-    with guindaste.request(priority = 2) as req:
-        yield req
-        
-        while tempo_descarregamento:
-            try:
-                if debug:
-                    print('%s inicia carregamento em %.1f horas.' % (nome, env.now))  
 
-                start = env.now
-                yield env.timeout(tempo_descarregamento)
-                tempoOcupadoGuindaste += tempo_descarregamento
-                if debug:
-                    print('%s termina carregamento em %.1f horas.' % (nome, env.now))  
-
-                tempo_descarregamento = 0
-            except simpy.Interrupt:
-                if debug:
-                    print('%s sofre quebra de guindaste em %.1f horas.' % (nome, env.now))  
-
-                tempo_descarregamento -= env.now - start
-               
-                
-                if debug:
-                    print('%s guindaste operante em %.1f horas.' % (nome, env.now))
-
-def quebra_guindaste(self, env, berco, guindaste):
-    global broken
-    global tempoQuebraGuindaste
-    while True:
-        yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
-        if not broken:
-            with guindaste.request(priority=1) as req:
-                yield req
-                if debug:
-                    print('Guindaste QUEBROU em %.1f horas.' % (env.now))
-                t1 = env.now
-                broken=True
-                yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONCERTO))
-                if debug:
-                    print('Guindaste LIBERADO em %.1f horas.' % (env.now))
-                t2 = env.now
-                t = t2 - t1
-                tempoQuebraGuindaste += t
-                
-                broken=False   
-    
 print('Simulacao > Etapa 2 - Volta 2')
 dist.defineSeed(P.RANDOM_SEED)
 helper.defineSeedNumpy(P.RANDOM_SEED)
@@ -200,6 +150,8 @@ for i in range(P.NUM_REPLICACOES):
     guindaste1 = simpy.PreemptiveResource(env, capacity = 1)
     guindaste2 = simpy.PreemptiveResource(env, capacity = 1)
     guindaste3 = simpy.PreemptiveResource(env, capacity = 1)
+    guindastesStore = simpy.FilterStore(env, capacity=3)
+    guindastesStore.items = [guindaste1, guindaste2, guindaste3]
     env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
     env.process(quebra_guindaste(env,guindaste1))
