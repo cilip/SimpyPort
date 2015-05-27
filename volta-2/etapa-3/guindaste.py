@@ -1,86 +1,69 @@
-def guindaste(self, env):
-    #sao no total 3 guindastes
-    #maximo de dois guindastes panamax e tres para capesize
+"""
 
-    guindaste1 = simpy.PreemptiveResource(env, capacity = 1)
-    guindaste2 = simpy.PreemptiveResource(env, capacity = 1)
-    guindaste3 = simpy.PreemptiveResource(env, capacity = 1)
-    guindastesStore = simpy.Store(env, capacity=3)
-    guindastesStore.items = [guindaste1, guindaste2, guindaste3]
+    Guindastes estao organizados em uma lista Store, conforme sao "pegos" e usados nos navios, saem da lista. Quando terminam de ser usados,
+voltam para a lista e ficam disponiveis para a proxima embarcacao.
+    
+
+
+"""
+
+
+import simpy
+
+env = simpy.Environment()
+
+guindaste1 = simpy.PreemptiveResource(env, capacity = 1)
+guindaste2 = simpy.PreemptiveResource(env, capacity = 1)
+guindaste3 = simpy.PreemptiveResource(env, capacity = 1)
+
+#os guindastes existentes estao organizados em uma lista
+guindastesStore = simpy.Store(env, capacity=3)
+guindastesStore.items = [guindaste1, guindaste2, guindaste3]
+
+num_guindastes = 0
+
+#funcao que calcula quantos guindastes estao discponiveis naquele momento para a embarcacao em questao
+def guindastes_disponiveis(env, guindastesStore):
+    num_guindastes_disponiveis = len(guindastesStore.items)
+    print("numero ", num_guindastes_disponiveis)
+    return num_guindastes_disponiveis    
     
     
-    self.tempo_descarregamento = random.expovariate(1/TEMPO_DESCARREGAMENTO_MEDIO)
+#pega todos os guindastes disponiveis no momento em questao
+def pega_guindaste(env, navio, guindastesStore):
+    num = guindastes_disponiveis(env, guindastesStore)
+    for i in range(num):
+        item = yield guindastesStore.get()
+        with item.request(priority = 2) as req:
+            yield req        
+        i+=1
+    return 
+    
+
+#processo no qual a velocidade eh calculada e a carga eh transferida ate que o numero de guindastes relacionados a embarcacao em questao mude
+#provavelmente sera um process
+def descarregamento(env, navio, num_guindastes):
+    global velocidade
+    while num = num_guindastes:
+        start = env.now
+        tempo = num_guindastes*(self.carga/velocidade)
+    pause = env.now
+    carga_transferida = 
+
+
+#verifificar situacao do guindaste (quebras e transferencia para outra embarcacao)
+def monitor(env, guindaste):
     
     while True:
-        guindaste = yield guindastesStore.get()
-        num_guindastes = 1
         
         
-    
-    
-    #request um dos guindastes
-    #mudar priority
-    #se ha um guindaste na embarcacao, a prioridade dos novos guindastes devem ser para com essa embarcacao e nao para as novas embarcacoes 
-    if self.guindaste:
-        self.priority = 2
-    else:
-        self.priority = 3
+        yield env.timeout(5)
         
-    #mudancas de velociaddaes de descarregamento conforme numero de guindastes operantes na embarcacao
-    #valores de carga e tempo_descarregamento sao alterados durante todo o precesso
-    #lembrando que guindastes podem ser adicionados, como tambem returados (quebra)
-    #lembrar atualizar carga no estoque
-    #criar monitor para atualizar contantemente os valores
-    self.velocidade_descarregamento = self.num_guindastes*(self.carga/self.tempo_descarregamento)
-
         
-    #request lista de guindastes, com os tres guindastes
-    #processo continuo
-    #provavelmente o mesmo monitor das atualizacoes de velocidades
-    with guindaste.request(priority = self.priority) as req:
-       yield req
-        
-        while self.tempo_descarregamento:
-            try:
-                if debug:
-                    print('%s inicia carregamento em %.1f horas.' % (nome, env.now))  
-
-                start = env.now
-                yield env.timeout(tempo_descarregamento)
-                tempoOcupadoGuindaste += tempo_descarregamento
-                if debug:
-                    print('%s termina carregamento em %.1f horas.' % (nome, env.now))  
-
-                tempo_descarregamento = 0
-            except simpy.Interrupt:
-                if debug:
-                    print('%s sofre quebra de guindaste em %.1f horas.' % (nome, env.now))  
-
-                tempo_descarregamento -= env.now - start
-               
-                
-                if debug:
-                    print('%s guindaste operante em %.1f horas.' % (nome, env.now))
-        
-    armazem.put(900)
-    estoqueAtual.append((env.now - tempoInicial, armazem.level))
-
-    # Tempo de desatracacao
-    yield env.timeout(random.triangular(TEMPO_DESATRACACAO_MIN, TEMPO_DESATRACACAO_MEDIO, TEMPO_DESATRACACAO_MAX))
-    
-    if debug:
-        print('%s deixa o porto em %.1f horas.' % (nome, env.now))  
-
-    if debug:
-        print('%s tempo de carregamento: %.1f horas.' % (nome, env.now - start))
-    tempoBercoOcupado=tempoBercoOcupado+env.now-start
-    numNaviosAtendidos += 1
-    cargaEntregue += CARGA_NAVIO
-
-
-
-def quebra_guindaste(env, guindaste):
-    #deve rodar para cada um dos tres guindastes em questao, simultaneamente (env.process(env, guindaste))
+#funcao com o objetivo de promover quebras nos guindastes
+#funcao em processo durante todo o tempo de simulacao
+#**ideia** criar variavel global para 
+def quebraGuindaste(env,guindaste):
     global broken
     global tempoQuebraGuindaste
     while True:
@@ -99,5 +82,15 @@ def quebra_guindaste(env, guindaste):
                 t = t2 - t1
                 tempoQuebraGuindaste += t
                 
-                broken=False   
-    
+                broken=False
+        
+        
+def navio(env, guindastesStore):
+    for i in range(guindastes_disponiveis(env, guindastesStore)):
+        guindaste = yield guindastesStore.get()
+        num_guindastes +=1
+        print("NUMERO GUINDASTES = %d" %num_guindastes)
+
+for i in range(2):
+    env.process(navio(env, guindastesStore))
+env.run()
