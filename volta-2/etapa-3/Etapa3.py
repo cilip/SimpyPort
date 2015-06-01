@@ -95,21 +95,15 @@ class Navio(object):
         return tempoMare
         
     def opera(self, env):
-        if P.debug:
-            print ('%s classe %i inicia operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         
-        if self.classe == 1: #Panamax
-            #num_maximo de guindastes = 2
-            self.num_max_guind = 2
-            
-            
-        if self.classe == 3: #Capesize
-            #num_maximo de guindastes = 3
-            self.num_max_guind = 3
-            
-            
-        #colocar funcoes do 'arquivo guindaste'
-            
+        self.guindastes_disponiveis = guindaste.guindastes_disponiveis(env, guindastesStore, self.classe)
+        
+        for i in range(self.guindastes_disponiveis):
+            guindaste = yield guindastesStore.get()
+            self.guindastes.append(guindaste.number)
+               
+            yield guindaste.ocupa(env, self.name) #request
+              
         
         yield self.env.timeout(dist.carregamento())
         if P.debug:
@@ -147,11 +141,7 @@ for i in range(P.NUM_REPLICACOES):
         bercosList.append(berco)
         
     # Create environment and start processe
-    guindaste1 = simpy.PreemptiveResource(env, capacity = 1)
-    guindaste2 = simpy.PreemptiveResource(env, capacity = 1)
-    guindaste3 = simpy.PreemptiveResource(env, capacity = 1)
-    guindastesStore = simpy.FilterStore(env, capacity=3)
-    guindastesStore.items = [guindaste1, guindaste2, guindaste3]
+
     env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
     env.process(quebra_guindaste(env,guindaste1))
