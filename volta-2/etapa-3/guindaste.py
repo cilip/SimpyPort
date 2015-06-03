@@ -21,8 +21,9 @@ class Guindaste(object):
         self.resource =  simpy.Resource(env, 1)
         self.req = self.resource.request()
         self.broken = False
-        
-    def quebraGuindaste(env, self, _guindastes
+ 
+       
+    def quebraGuindaste(env, self, guindastes_navio):
         global tempoQuebraGuindaste
         while True:
             yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
