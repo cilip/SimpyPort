@@ -81,6 +81,7 @@ class Navio(object):
     #processa todos os guindastes atuantes no navio e atualiza velocidade e carga transportada
     #no fim, da um yield com um tempo pequeno
     def monitor(self, constante_velocidade):
+        global armazem
         start = env.now
         num_guindastes = self.guindastes
         while num_guindastes == self.guindastes:
@@ -95,7 +96,7 @@ class Navio(object):
         
             
     def opera(self, env):
-        #pega o numero de guindastes disponiveis para serem pegos
+        #pega o numero de guindastes disponiveis
         self.guindastes = guindaste.guindastes_disponiveis(env, guindaste.guindastesStore, self.classe)
         
         #navio pega todos os guindastes disponiveis na Store
@@ -119,6 +120,9 @@ class Navio(object):
 
     def desatraca(self, env, berco):
         # rotina de desatracação
+        for i in range (self.guindastes):
+            yield guindaste.guindastesStore.put() #verificar se funciona
+        guindaste.guindastesStore.put()
         tempoMare = yield env.process(self.mare(env))
         berco.mare(tempoMare,1)        
         berco.desocupa(env)
