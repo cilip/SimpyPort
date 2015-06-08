@@ -18,10 +18,14 @@ from bercos_classe import Bercos, statusMareCape
 import pandas as pd
 import numpy as np
 from scipy.stats import t
+import guindaste as guindaste
 
+constante_velocidade = 5 #exemplo
 numBercos = 2
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
 naviosFila = 0
+CAPACIDADE = 1000000 #capacidade armazem
+
 
 class Navio(object):
     #from bercos_classe import atracacao     
@@ -32,6 +36,7 @@ class Navio(object):
         self.berco = 0
         self.classe = helper.discreteDist(P.classesNavio, P.distClasses)
         self.carga = helper.cargaNavio(P.classesNavio.index(self.classe), P.cargaClasses)
+        self.carga_total_transferida = 0
         if P.debug:
             print('%s classe %i chega em %.2f' %(self.name,self.classe, env.now))
         
@@ -71,7 +76,46 @@ class Navio(object):
         if P.debug:
             print ('%s classe %i atracou no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         return berco
+      
+      
+    #processa todos os guindastes atuantes no navio e atualiza velocidade e carga transportada
+    #no fim, da um yield com um tempo pequeno
+    def monitor(self, constante_velocidade):
+        start = env.now
+        num_guindastes = self.guindastes
+        while num_guindastes == self.guindastes:
+            velocidade = constante_velocidade * num_guindastes
+        tempo = env.now - start
+        carga_transferida = velocidade*tempo
+        self.carga_total_transferida += carga_transferida
+        armazem.put(carga_transferida)
+        
+        yield(5)
+        
+        
             
+    def opera(self, env):
+        #pega o numero de guindastes disponiveis para serem pegos
+        self.guindastes = guindaste.guindastes_disponiveis(env, guindaste.guindastesStore, self.classe)
+        
+        #navio pega todos os guindastes disponiveis na Store
+        for i in range(self.guindastes):
+            yield guindaste.guindastesStore.get()
+            self.guindastes.append(guindaste.number)
+            #altera informacoes para caga guindaste
+            yield guindaste.Guindaste.ocupa(env, self.name) #request
+            env.process(guindaste.Guindaste.quebraGuindaste(env, self.guindaste[i],self.guindastes))
+              
+        #tempo de desatracacao
+        #velocidade difere conforme numero de guindastes difere (quebra)
+        while self.carga_total_transferida != self.carga:
+            yield env.process(self.monitor(constante_velocidade))
+        
+       
+        if P.debug:
+            print ('%s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
+
+    
 
     def desatraca(self, env, berco):
         # rotina de desatracação
@@ -94,23 +138,7 @@ class Navio(object):
                     print ("%s classe cape aguardou mare por %.1f horas" %(self.name, tempoMare))
         return tempoMare
         
-    def opera(self, env):
-        
-        self.guindastes_disponiveis = guindaste.guindastes_disponiveis(env, guindastesStore, self.classe)
-        
-        for i in range(self.guindastes_disponiveis):
-            guindaste = yield guindastesStore.get()
-            self.guindastes.append(guindaste.number)
-               
-            yield guindaste.ocupa(env, self.name) #request
-              
-        
-        yield self.env.timeout(dist.carregamento())
-        if P.debug:
-            print ('%s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
-        P.cargaTotal += self.carga
-
-        
+      
         
 def geraNavio(env):
     while 1:
@@ -144,40 +172,5 @@ for i in range(P.NUM_REPLICACOES):
 
     env.process(helper.monitor(env,logFila, naviosFila))
     env.process(geraNavio(env))
-    env.process(quebra_guindaste(env,guindaste1))
-    env.process(quebra_guindaste(env,guindaste2))
-    env.process(quebra_guindaste(env,guindaste3))
+    armazem = simpy.Container(env, CAPACIDADE, init=0)
     env.run(until=P.SIM_TIME)
-    df_resultados.ix[i]['Carga entregue'] = P.cargaTotal
-    
-    for berco in bercosList:
-        df_resultados.ix[i]['Atracações '+str(berco.number+1)] = berco.usages
-        df_resultados.ix[i]['Tempo ocupado '+str(berco.number+1)] = berco.tempoOcupado
-
-
-    logFila = []
-    naviosFila = 0
-    P.cargaTotal =0
-    
-medias = df_resultados.mean()
-desvios = df_resultados.std()
-IC = t.ppf(0.975,P.NUM_REPLICACOES-1)*desvios/np.sqrt(P.NUM_REPLICACOES)
-df_resultados.loc['Média'] = medias
-df_resultados.loc['Desvio padrão'] = desvios
-df_resultados.loc['IC inf @ 95%'] = medias - IC
-df_resultados.loc['IC sup @ 95%'] = medias + IC
-print(df_resultados)
-
-
-excel = helper.abreExcel()
-wb = helper.abrePlanilhaExcel(excel,P.pathInterface,P.arqInterface)
-ws = helper.selecionaPastaExcel(wb,'Plan1')
-# preenche df no Excel
-helper.preencheRangeExcel(ws,(1,2),(1,6),['Atracações berço 1', 'Tempo ocupado berço 1 (h)', 'Atracações berço 2', 'Tempo ocupado berço 2 (h)', 'Total embarcado (t)'])
-helper.preencheCelulaExcel(ws,2,1,'Média')
-helper.preencheCelulaExcel(ws,3,1,'IC inf @ 95%')
-helper.preencheCelulaExcel(ws,4,1,'IC sup @ 95%')
-helper.preencheRangeExcel(ws,(2,2),(2,6),df_resultados.loc['Média',:].values.tolist())
-helper.preencheRangeExcel(ws,(3,2),(3,6),df_resultados.loc['IC inf @ 95%',:].values.tolist())
-helper.preencheRangeExcel(ws,(4,2),(4,6),df_resultados.loc['IC sup @ 95%',:].values.tolist())
-helper.salvaPlanilhaExcel(wb)

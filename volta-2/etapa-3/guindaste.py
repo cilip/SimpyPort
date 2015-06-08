@@ -7,13 +7,15 @@ voltam para a lista e ficam disponiveis para a proxima embarcacao.
 
 """
 import simpy
+import parametros as P
+import random
 
 env = simpy.Environment()
 
 numGuindastes = 3
-
-guindastesStore = simpy.FilterStore(env, capacity=numGuindastes)
-guindastesStore.items = [Guindaste(env, number=i) for i in range(numGuidnastes)]
+TEMPO_QUEBRA_GUINDASTE = 10 #exmeplo de valor
+tempoQuebraGuindaste = 0
+TEMPO_MEDIO_CONSERTO = 1.0 #exemplo de valor
 
 class Guindaste(object):
     def __init__(self, env, number):
@@ -24,20 +26,22 @@ class Guindaste(object):
  
        
     def quebraGuindaste(env, self, guindastes_navio):
+        #guindastes_navio e a variavel que conta quantos guindastes ha
         global tempoQuebraGuindaste
         while True:
             yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
             if not self.broken:
-                with guindaste.request(priority=1) as req:
+                with self.request(priority=1) as req:
                     yield req
-                    if debug:
+                    if P.debug:
                         print('Guindaste QUEBROU em %.1f horas.' % (env.now))
                     t1 = env.now
                     self.broken=True
                     guindastes_navio -= 1
-                    yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONCERTO))
-                    if debug:
-                        print('Guindaste ' self.number' LIBERADO em %.1f horas.' % (env.now))
+                    yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONSERTO))
+                    guindastes_navio += 1
+                    if P.debug:
+                        print('Guindaste ', self.number,' LIBERADO em %.1f horas.' % (env.now))
                     t2 = env.now
                     t = t2 - t1
                     tempoQuebraGuindaste += t
@@ -55,13 +59,8 @@ class Guindaste(object):
         self.start = env.now
         self.navioAtual = name_navio
         return self.req(priority = 2)
-        
-    def monitor(self, guindastes_navio):
-        if self.broken == True:
-            self.navioAtual = None
-            guindastes_navio -= 1
-            
-            yield(5)
+    
+   
             
 
         
@@ -76,48 +75,14 @@ def guindastes_disponiveis(env, guindastesStore, classe_navio):
         num_maximo_guindastes = 3
     num_guindastes_disponiveis = len(guindastesStore.items)
     
-    if num_max_guindastes < num_guindastes_disponiveis:
-        num_guindastes_disponiveis = num_max_guindastes 
+    if num_maximo_guindastes < num_guindastes_disponiveis:
+        num_guindastes_disponiveis = num_maximo_guindastes 
         
-    if debug:
+    if P.debug:
         print("numero ", num_guindastes_disponiveis)
     return num_guindastes_disponiveis 
     
-   
 
-#processo no qual a velocidade eh calculada e a carga eh transferida ate que o numero de guindastes relacionados a embarcacao em questao mude
-#provavelmente sera um process
-def descarregamento(env, navio, num_guindastes, velocidade):
-    #monitor atualiza numero de guindastes em cada navio (num)
-    while num == num_guindastes:
-        start = env.now
-        tempo = num_guindastes*(self.carga/velocidade)
-    pause = env.now
-    carga_transferida = velocidade*(pause-start)
-
-
-#verifificar situacao do guindaste (quebras e transferencia para outra embarcacao)
-#atualizar carga existente na embarcacao e no armazem
-def monitor(env, guindaste):    
-    while True:
-        if 
-            #verifica em que navio se encontra este guindaste e muda a velocidade de transferencia de carga
-            
-        #verifica guindastes quebrados e atualiza velocidade de descarregamento
-        
-        
-        if #numero de guindastes muda, repete o processo de descarregamento daquele navio
-            descarregamento(env, navio, num_guindastes, velocidade)
-        yield env.timeout(5)
-        
-    return 
-        
-#funcao com o objetivo de promover quebras nos guindastes
-#funcao em processo durante todo o tempo de simulacao
-#havera 3 'broken's, um para cada guindaste
-
-
-#realocar guindastes que quebraram e foram concertados ou que terminaram descarregamento
-def realocar_guindaste(env, navio, guindaste):
-    
+guindastesStore = simpy.FilterStore(env, capacity=numGuindastes)
+guindastesStore.items = [Guindaste(env, number=i) for i in range(numGuindastes)]
     
