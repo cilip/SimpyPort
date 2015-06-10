@@ -18,8 +18,9 @@ from bercos_classe import Bercos, statusMareCape
 import pandas as pd
 import numpy as np
 from scipy.stats import t
-import guindaste as guindaste
+from guindaste import Guindaste
 
+numGuindastes = 3
 constante_velocidade = 5 #exemplo
 numBercos = 2
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
@@ -31,12 +32,14 @@ class Navio(object):
     #from bercos_classe import atracacao     
     def __init__(self, env, name):
         global cargaTotal
+        
         self.env = env
         self.name = name
         self.berco = 0
         self.classe = helper.discreteDist(P.classesNavio, P.distClasses)
         self.carga = helper.cargaNavio(P.classesNavio.index(self.classe), P.cargaClasses)
         self.carga_total_transferida = 0
+        self.guindastes = 0
         if P.debug:
             print('%s classe %i chega em %.2f' %(self.name,self.classe, env.now))
         
@@ -67,7 +70,7 @@ class Navio(object):
         
         if P.debug:
             print ("%s classe %i inicia atracação no berço %i em %.2f" % (self.name, self.classe, self.berco, env.now))
-
+        
         yield berco.ocupa(env, self.classe)
         
         tempoMare = yield env.process(self.mare(env))
@@ -80,6 +83,7 @@ class Navio(object):
       
     #processa todos os guindastes atuantes no navio e atualiza velocidade e carga transportada
     #no fim, da um yield com um tempo pequeno
+      
     def monitor(self, constante_velocidade):
         global armazem
         start = env.now
@@ -97,16 +101,19 @@ class Navio(object):
             
     def opera(self, env):
         #pega o numero de guindastes disponiveis
-        self.guindastes = guindaste.guindastes_disponiveis(env, guindaste.guindastesStore, self.classe)
-        
+        print("opera")
+        self.guindastes = guindaste.guindastes_disponiveis(env, guindastesStore, self.classe) #lista/numero
+        print("opera 2")
         #navio pega todos os guindastes disponiveis na Store
-        for i in range(self.guindastes):
-            yield guindaste.guindastesStore.get()
-            self.guindastes.append(guindaste.number)
-            #altera informacoes para caga guindaste
-            yield guindaste.Guindaste.ocupa(env, self.name) #request
-            env.process(guindaste.Guindaste.quebraGuindaste(env, self.guindaste[i],self.guindastes))
-              
+        for i in range(len(self.guindastes)):
+            print("opera 3")
+            guindaste_pego = yield guindastesStore.get() #escolher qualquer guindaste que esteja na lista de self.guindastes do navio em questao
+            print("Pegou guindaste",guindaste_pego)
+            #altera informacoes para cada guindaste
+            
+            yield guindaste_pego.ocupa(env, self.name) #request
+            env.process(guindaste_pego.quebraGuindaste(env, guindaste_pego)) 
+            
         #tempo de desatracacao
         #velocidade difere conforme numero de guindastes difere (quebra)
         while self.carga_total_transferida != self.carga:
@@ -121,8 +128,9 @@ class Navio(object):
     def desatraca(self, env, berco):
         # rotina de desatracação
         for i in range (self.guindastes):
-            yield guindaste.guindastesStore.put() #verificar se funciona
-        guindaste.guindastesStore.put()
+            yield self.guindaste[i].desocupa(env)
+            yield guindastesStore.put(self.guindaste[i])
+            
         tempoMare = yield env.process(self.mare(env))
         berco.mare(tempoMare,1)        
         berco.desocupa(env)
@@ -167,6 +175,10 @@ for i in range(P.NUM_REPLICACOES):
 
     bercosStore.items[0].carregaClassesAtendidas([1 ,1 ,0, 0, 0, 0])
     bercosStore.items[1].carregaClassesAtendidas([1 ,1 , 1, 1, 1, 1])
+    
+    guindastesStore = simpy.FilterStore(env, capacity=numGuindastes)
+    guindastesStore.items = [Guindaste(env, number=i) for i in range(numGuindastes)]
+
     
     # monta lista de bercos para a estatística final
     for berco in bercosStore.items:

@@ -12,7 +12,7 @@ import random
 
 env = simpy.Environment()
 
-numGuindastes = 3
+
 TEMPO_QUEBRA_GUINDASTE = 10 #exmeplo de valor
 tempoQuebraGuindaste = 0
 TEMPO_MEDIO_CONSERTO = 1.0 #exemplo de valor
@@ -23,9 +23,11 @@ class Guindaste(object):
         self.resource =  simpy.Resource(env, 1)
         self.req = self.resource.request()
         self.broken = False
+        self.start = env.now
+        self.navioAtual = ''
  
        
-    def quebraGuindaste(env, self, guindastes_navio):
+    def quebraGuindaste(self, env, guindastes_navio):
         #guindastes_navio e a variavel que conta quantos guindastes ha
         global tempoQuebraGuindaste
         while True:
@@ -58,9 +60,14 @@ class Guindaste(object):
     def ocupa(self, env, name_navio):
         self.start = env.now
         self.navioAtual = name_navio
-        return self.req(priority = 2)
-    
-   
+        
+        return self.req #(priority =2)
+        
+    def desocupa(self, env):
+        self.resource.release(self.req)
+        
+    def checar_navio(self, env):
+        return self.navioAtual
             
 
         
@@ -77,12 +84,14 @@ def guindastes_disponiveis(env, guindastesStore, classe_navio):
     
     if num_maximo_guindastes < num_guindastes_disponiveis:
         num_guindastes_disponiveis = num_maximo_guindastes 
-        
+    
+    lista_guindastes = []
+    for i in range (num_guindastes_disponiveis):
+        lista_guindastes.append(guindastesStore.items[i])
+    
     if P.debug:
-        print("numero ", num_guindastes_disponiveis)
-    return num_guindastes_disponiveis 
+        print("Numero de guindastes disponiveis ", num_guindastes_disponiveis)
+    return lista_guindastes
     
 
-guindastesStore = simpy.FilterStore(env, capacity=numGuindastes)
-guindastesStore.items = [Guindaste(env, number=i) for i in range(numGuindastes)]
     
