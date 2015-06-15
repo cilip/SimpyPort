@@ -9,6 +9,9 @@ voltam para a lista e ficam disponiveis para a proxima embarcacao.
 import simpy
 import parametros as P
 import random
+from parametros import guindasteBerco
+
+checar_quebra = [0,0,0]
 
 env = simpy.Environment()
 
@@ -20,16 +23,17 @@ TEMPO_MEDIO_CONSERTO = 1.0 #exemplo de valor
 class Guindaste(object):
     def __init__(self, env, number):
         self.number = number
-        self.resource =  simpy.Resource(env, 1)
+        self.resource =  simpy.PreemptiveResource(env, 1)
         self.req = self.resource.request()
         self.broken = False
         self.start = env.now
         self.navioAtual = ''
- 
+
        
     def quebraGuindaste(self, env, guindastes_navio):
         #guindastes_navio e a variavel que conta quantos guindastes ha
         global tempoQuebraGuindaste
+        global checar_guindaste
         while True:
             yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
             if not self.broken:
@@ -39,6 +43,7 @@ class Guindaste(object):
                         print('Guindaste QUEBROU em %.1f horas.' % (env.now))
                     t1 = env.now
                     self.broken=True
+                    checar_quebra[guindasteBerco[self.number]] = 1
                     guindastes_navio -= 1
                     yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONSERTO))
                     guindastes_navio += 1
@@ -49,6 +54,7 @@ class Guindaste(object):
                     tempoQuebraGuindaste += t
                     
                     self.broken = False
+                    checar_quebra[self.number] = 0
                     
 
     def getNumber(self):
@@ -60,11 +66,11 @@ class Guindaste(object):
     def ocupa(self, env, name_navio):
         self.start = env.now
         self.navioAtual = name_navio
-        
-        return self.req #(priority =2)
+        return self.resource.request(priority=2) #(priority =2)
         
     def desocupa(self, env):
         self.resource.release(self.req)
+         
         
     def checar_navio(self, env):
         return self.navioAtual
@@ -91,7 +97,7 @@ def guindastes_disponiveis(env, guindastesStore, classe_navio):
     
     if P.debug:
         print("Numero de guindastes disponiveis ", num_guindastes_disponiveis)
-    return lista_guindastes
+    return num_guindastes_disponiveis
     
 
     
