@@ -15,5 +15,6 @@ cargaClasses = [(60000, 70000, 80000), (80000, 100000, 120000),(120000, 170000, 
 cargaTotal = 0 #carga total entregue no ano
 BercosPrioridades = [[1,1], [1,1], [0,1], [0,1], [0,1], [0,1]]
 
+guindasteBerco = {} # dicionario para relacionar berco com guindaste
 
 ListaBercosClasses = []

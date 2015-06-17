@@ -116,10 +116,17 @@ class Navio(object):
         
             
     def opera(self, env):
+        
         #pega o numero de guindastes disponiveis
         print("opera")
         self.guindastes = guindastes_disponiveis(env, guindastesStore, self.classe) #lista/numero
+        if self.guindastes ==0:
+            while len(guindastesStore.items) ==0:
+                yield(3)
+            self.guindastes = len(guindastesStore.items) #=1
         print("opera 2")
+        
+        
         #navio pega todos os guindastes disponiveis na Store
         for i in range(self.guindastes):
             #numero_guindaste = Guindaste.getNumber(self.guindastes[i])
@@ -130,7 +137,7 @@ class Navio(object):
             self.lista_guindastes.append(numero_guindaste)            
             print("Pegou guindaste", numero_guindaste)
             #altera informacoes para cada guindaste
-            yield Guindaste.ocupa(guindaste_pego, env, self.name) #request
+            yield(Guindaste.ocupa(guindaste_pego, env, self.name)) ########
             print("guindaste1")
             env.process(Guindaste.quebraGuindaste(env, guindaste_pego , self.guindastes)) 
             print("guindaste2")

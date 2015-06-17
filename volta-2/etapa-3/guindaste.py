@@ -86,11 +86,15 @@ def guindastes_disponiveis(env, guindastesStore, classe_navio):
         num_maximo_guindastes = 2
     if classe_navio == 3: #Capesize
         num_maximo_guindastes = 3
+        
+        
     num_guindastes_disponiveis = len(guindastesStore.items)
-    
+   
+        
     if num_maximo_guindastes < num_guindastes_disponiveis:
         num_guindastes_disponiveis = num_maximo_guindastes 
-    
+
+        
     lista_guindastes = []
     for i in range (num_guindastes_disponiveis):
         lista_guindastes.append(guindastesStore.items[i])
