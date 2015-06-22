@@ -26,7 +26,7 @@ from guindaste import checar_quebra
 numGuindastes = 3
 constante_velocidade = 5 #exemplo
 numBercos = 2
-checar_quebra = [0, 0, 0] #0 corresponde a funcionamento e 1 a quebra
+#checar_quebra = [0, 0, 0] #0 corresponde a funcionamento e 1 a quebra
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
 naviosFila = 0
 CAPACIDADE = 1000000 #capacidade armazem
@@ -47,6 +47,7 @@ class Navio(object):
         self.velocidade = 0
         self.lista_guindastes = []
         self.quebra_pausa = False
+        self.tempo_restante = 0
         if P.debug:
             print('%s classe %i chega em %.2f' %(self.name,self.classe, env.now))
         
@@ -96,21 +97,20 @@ class Navio(object):
             print("Navio %s usa monitor" %self.name)
         global armazem
         start = env.now
-        num_guindastes = self.guindastes
         
-        self.velocidade = constante_velocidade*num_guindastes
-        tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
+        self.velocidade = constante_velocidade*self.guindastes
+        self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
         print("monitor")
-        while tempo_restante > 0:
+        while self.tempo_restante > 0:
             yield env.timeout(5)
-            #while checar_quebra[self.berco] == 0:
-            self.velocidade = constante_velocidade * num_guindastes
+            self.velocidade = constante_velocidade *self.guindastes
             tempo = env.now - start
             carga_transferida = self.velocidade*tempo
             self.carga_total_transferida += carga_transferida
-            if P.debug: print(env.now, carga_transferida)
+            if P.debug: 
+                print(env.now, carga_transferida)
             armazem.put(carga_transferida)
-            
+            self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
         
         
         
@@ -132,12 +132,13 @@ class Navio(object):
             #numero_guindaste = Guindaste.getNumber(self.guindastes[i])
             print(self.guindastes)
             guindaste_pego = yield guindastesStore.get() #escolher qualquer guindaste que esteja na lista de self.guindastes do navio em questao
+            print("pegou", guindaste_pego)            
             numero_guindaste = Guindaste.getNumber(guindaste_pego)
             guindasteBerco[guindaste_pego] = self.berco
             self.lista_guindastes.append(numero_guindaste)            
             print("Pegou guindaste", numero_guindaste)
             #altera informacoes para cada guindaste
-            yield(Guindaste.ocupa(guindaste_pego, env, self.name)) ########
+            yield (Guindaste.ocupa(guindaste_pego, env, self.name)) ########
             print("guindaste1")
             env.process(Guindaste.quebraGuindaste(env, guindaste_pego , self.guindastes)) 
             print("guindaste2")

@@ -142,7 +142,7 @@ for i in range(P.NUM_REPLICACOES):
     for berco in bercosList:
         df_resultados.ix[i]['Atracações '+str(berco.number+1)] = berco.usages
         df_resultados.ix[i]['Tempo ocupado '+str(berco.number+1)] = berco.tempoOcupado
-        df_resultados.ix[i][]
+        #df_resultados.ix[i][]
          
     logFila = []
     naviosFila = 0
