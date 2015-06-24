@@ -67,7 +67,7 @@ class Guindaste(object):
         self.start = env.now
         self.navioAtual = name_navio
         return self.resource.request(priority=2) #(priority =2)
-        
+          
     def desocupa(self, env):
         self.resource.release(self.req)
          

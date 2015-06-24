@@ -198,7 +198,7 @@ def geraNavio(env):
         for i in itertools.count(1):
             yield env.timeout(dist.chegadas())           
             Navio(env, "Navio %d" %i)
-            
+             
       
 
 print('Simulacao > Etapa 2 - Volta 2')
