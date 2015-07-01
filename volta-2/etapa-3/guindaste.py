@@ -39,8 +39,8 @@ class Guindaste(object):
             if not self.broken:
                 with self.resource.request(priority = 1) as req:
                     yield req
-                    if P.debug:
-                        print('Guindaste QUEBROU em %.1f horas.' % (env.now))
+                    #if P.debug:
+                        #print('Guindaste QUEBROU em %.1f horas.' % (env.now))
                     t1 = env.now
                     self.broken=True
                     

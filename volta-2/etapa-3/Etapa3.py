@@ -98,7 +98,7 @@ class Navio(object):
       
     def monitor(self, env, constante_velocidade):
         if P.debug:
-            print("Navio %s usa monitor" %self.name)
+            print("%s usa monitor" %self.name)
         global armazem
         start = env.now
         
@@ -107,7 +107,7 @@ class Navio(object):
         print("monitor")
         while self.tempo_restante > 0:
             yield env.timeout(5)
-            self.velocidade = constante_velocidade *self.guindastes
+            self.velocidade = constante_velocidade * self.guindastes
             tempo = env.now - start
             carga_transferida = self.velocidade*tempo
             self.carga_total_transferida += carga_transferida
@@ -115,6 +115,8 @@ class Navio(object):
                 print(env.now, carga_transferida)
             armazem.put(carga_transferida)
             self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
+        
+
         
         
         
@@ -149,14 +151,17 @@ class Navio(object):
             env.process(guindaste_pego.quebraGuindaste(env, self.guindastes)) 
             print("guindaste2")
         
-        print("funcao_quebra")
-        
-        #tempo de desatracacao
-        #velocidade difere conforme numero de guindastes difere (quebra)
-        print("while")
-        while self.carga_total_transferida < self.carga:
-            yield env.process(self.monitor(env,constante_velocidade))
-        
+            print("funcao_quebra")
+                
+            #tempo de desatracacao
+            #velocidade difere conforme numero de guindastes difere (quebra)
+            print("while")
+            while self.carga_total_transferida < self.carga:
+                try:
+                    yield env.process(self.monitor(env,constante_velocidade))
+                except simpy.Interrupt:
+                    if P.debug:
+                        print('Guindaste sofre quebra em %.1f horas.' % (env.now)) 
        
         if P.debug:
             print ('%s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
