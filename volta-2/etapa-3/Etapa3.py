@@ -11,18 +11,22 @@ O modelo deve fornecer o tempo ocupado, livre, em mp e mc dos guindastes e a tax
 """
 import itertools # count automatico
 import simpy
-import helper_functions_SimpyPort as helper
-import parametros as P
-from parametros import guindasteBerco
 
-import distribuicoes as dist
-from bercos_classe import Bercos, statusMareCape
 import pandas as pd
 import numpy as np
 from scipy.stats import t
+
+from bercos_classe import Bercos, statusMareCape
 from guindaste import Guindaste
 from guindaste import guindastes_disponiveis
 from guindaste import checar_quebra
+import helper_functions_SimpyPort as helper
+import parametros as P
+from parametros import guindasteBerco
+import distribuicoes as dist
+
+
+
 numGuindastes = 3
 constante_velocidade = 5 #exemplo
 numBercos = 2
@@ -120,8 +124,8 @@ class Navio(object):
         #pega o numero de guindastes disponiveis
         print("opera")
         self.guindastes = guindastes_disponiveis(env, guindastesStore, self.classe) #lista/numero
-        if self.guindastes ==0:
-            while len(guindastesStore.items) ==0:
+        if self.guindastes == 0:
+            while len(guindastesStore.items) == 0:
                 yield(3)
             self.guindastes = len(guindastesStore.items) #=1
         print("opera 2")
@@ -134,13 +138,15 @@ class Navio(object):
             guindaste_pego = yield guindastesStore.get() #escolher qualquer guindaste que esteja na lista de self.guindastes do navio em questao
             print("pegou", guindaste_pego)            
             numero_guindaste = Guindaste.getNumber(guindaste_pego)
-            guindasteBerco[guindaste_pego] = self.berco
+            guindasteBerco[numero_guindaste] = self.berco # armazena dicionário para saber onde esta o guindaste
+            
             self.lista_guindastes.append(numero_guindaste)            
             print("Pegou guindaste", numero_guindaste)
-            #altera informacoes para cada guindaste
-            yield (Guindaste.ocupa(guindaste_pego, env, self.name)) ########
+           
+           #altera informacoes para cada guindaste
+            yield (guindaste_pego.ocupa(env, self.name)) ########
             print("guindaste1")
-            env.process(Guindaste.quebraGuindaste(env, guindaste_pego , self.guindastes)) 
+            env.process(guindaste_pego.quebraGuindaste(env, self.guindastes)) 
             print("guindaste2")
         
         print("funcao_quebra")
@@ -201,7 +207,7 @@ def geraNavio(env):
              
       
 
-print('Simulacao > Etapa 2 - Volta 2')
+print('Simulacao > Etapa 3 - Volta 2')
 dist.defineSeed(P.RANDOM_SEED)
 helper.defineSeedNumpy(P.RANDOM_SEED)
 columns = ['Atracações 1', 'Tempo ocupado 1', 'Atracações 2', 'Tempo ocupado 2', 'Carga entregue']
@@ -212,13 +218,13 @@ for i in range(P.NUM_REPLICACOES):
     logFila = []
     bercosList = []
     bercosStore = simpy.FilterStore(env, capacity=numBercos)
-    bercosStore.items = [Bercos(env, number=i) for i in range(numBercos)]
+    bercosStore.items = [Bercos(env, number=j) for j in range(numBercos)]
 
     bercosStore.items[0].carregaClassesAtendidas([1 ,1 ,0, 0, 0, 0])
     bercosStore.items[1].carregaClassesAtendidas([1 ,1 , 1, 1, 1, 1])
     
     guindastesStore = simpy.FilterStore(env, capacity=numGuindastes)
-    guindastesStore.items = [Guindaste(env, number=i) for i in range(numGuindastes)]
+    guindastesStore.items = [Guindaste(env, number=j) for j in range(numGuindastes)]
 
     
     # monta lista de bercos para a estatística final

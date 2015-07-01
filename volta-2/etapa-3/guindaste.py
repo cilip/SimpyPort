@@ -23,8 +23,7 @@ TEMPO_MEDIO_CONSERTO = 1.0 #exemplo de valor
 class Guindaste(object):
     def __init__(self, env, number):
         self.number = number
-        self.resource =  simpy.PreemptiveResource(env, 1)
-        self.req = self.resource.request()
+        self.resource =  simpy.PreemptiveResource(env, capacity = 1)
         self.broken = False
         self.start = env.now
         self.navioAtual = ''
@@ -34,17 +33,20 @@ class Guindaste(object):
         #guindastes_navio e a variavel que conta quantos guindastes ha
         global tempoQuebraGuindaste
         global checar_guindaste
+        
         while True:
             yield env.timeout(random.expovariate(1.0/TEMPO_QUEBRA_GUINDASTE))
             if not self.broken:
-                with self.request(priority=1) as req:
+                with self.resource.request(priority = 1) as req:
                     yield req
                     if P.debug:
                         print('Guindaste QUEBROU em %.1f horas.' % (env.now))
                     t1 = env.now
                     self.broken=True
+                    
                     checar_quebra[guindasteBerco[self.number]] = 1
                     guindastes_navio -= 1
+                    
                     yield env.timeout(random.expovariate(1.0/TEMPO_MEDIO_CONSERTO))
                     guindastes_navio += 1
                     if P.debug:
@@ -61,12 +63,12 @@ class Guindaste(object):
         return self.number
     
     def getRequest(self):
-        return self.req    
+        return self.resource.request(priority = 2)    
     
     def ocupa(self, env, name_navio):
         self.start = env.now
         self.navioAtual = name_navio
-        return self.resource.request(priority=2) #(priority =2)
+        return self.resource.request(priority = 2) #(priority = 2)
           
     def desocupa(self, env):
         self.resource.release(self.req)
