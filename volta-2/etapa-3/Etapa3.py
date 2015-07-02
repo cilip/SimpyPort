@@ -28,7 +28,7 @@ import distribuicoes as dist
 
 
 numGuindastes = 3
-constante_velocidade = 5 #exemplo
+constante_velocidade = 10000 #exemplo em tph
 numBercos = 2
 #checar_quebra = [0, 0, 0] #0 corresponde a funcionamento e 1 a quebra
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
@@ -49,7 +49,7 @@ class Navio(object):
         self.carga_total_transferida = 0
         self.guindastes = 0
         self.velocidade = 0
-        self.lista_guindastes = []
+        self.set_guindastes = set()
         self.quebra_pausa = False
         self.tempo_restante = 0
         if P.debug:
@@ -92,87 +92,88 @@ class Navio(object):
             print ('%s classe %i atracou no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
         return berco
       
-      
-    #processa todos os guindastes atuantes no navio e atualiza velocidade e carga transportada
-    #no fim, da um yield com um tempo pequeno
-      
-    def monitor(self, env, constante_velocidade):
-        if P.debug:
-            print("%s usa monitor" %self.name)
-        global armazem
-        start = env.now
-        
-        self.velocidade = constante_velocidade*self.guindastes
-        self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
-        print("monitor")
-        while self.tempo_restante > 0:
-            yield env.timeout(5)
-            self.velocidade = constante_velocidade * self.guindastes
-            tempo = env.now - start
-            carga_transferida = self.velocidade*tempo
-            self.carga_total_transferida += carga_transferida
-            if P.debug: 
-                print(env.now, carga_transferida)
-            armazem.put(carga_transferida)
-            self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
-        
 
-        
-        
-        
-            
     def opera(self, env):
         
         #pega o numero de guindastes disponiveis
-        print("opera")
+        if P.debug:
+            print("> %s inicia operação" %self.name)
+
         self.guindastes = guindastes_disponiveis(env, guindastesStore, self.classe) #lista/numero
         if self.guindastes == 0:
             while len(guindastesStore.items) == 0:
                 yield(3)
             self.guindastes = len(guindastesStore.items) #=1
-        print("opera 2")
-        
+
+        if P.debug:
+            print("> %s tem %i guindastes à diposição" %(self.name, self.guindastes))       
         
         #navio pega todos os guindastes disponiveis na Store
         for i in range(self.guindastes):
             #numero_guindaste = Guindaste.getNumber(self.guindastes[i])
-            print(self.guindastes)
+
             guindaste_pego = yield guindastesStore.get() #escolher qualquer guindaste que esteja na lista de self.guindastes do navio em questao
-            print("pegou", guindaste_pego)            
             numero_guindaste = Guindaste.getNumber(guindaste_pego)
             guindasteBerco[numero_guindaste] = self.berco # armazena dicionário para saber onde esta o guindaste
+            self.set_guindastes.add(guindaste_pego)             
+
+
             
-            self.lista_guindastes.append(numero_guindaste)            
-            print("Pegou guindaste", numero_guindaste)
-           
-           #altera informacoes para cada guindaste
-            yield (guindaste_pego.ocupa(env, self.name)) ########
-            print("guindaste1")
-            env.process(guindaste_pego.quebraGuindaste(env, self.guindastes)) 
-            print("guindaste2")
-        
-            print("funcao_quebra")
-                
-            #tempo de desatracacao
+            if P.debug:
+                print("> %s ocupou o guindaste %i" %(self.name, numero_guindaste))  
+            #env.process(guindaste_pego.quebraGuindaste(env, self.guindastes)) 
+
             #velocidade difere conforme numero de guindastes difere (quebra)
-            print("while")
+
             while self.carga_total_transferida < self.carga:
                 try:
-                    yield env.process(self.monitor(env,constante_velocidade))
+                    yield env.process(self.monitor(env, guindaste_pego, constante_velocidade))
                 except simpy.Interrupt:
                     if P.debug:
                         print('Guindaste sofre quebra em %.1f horas.' % (env.now)) 
-       
+               
+            if P.debug:
+                    print ('> %s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
+
+
+
+
+            #processa todos os guindastes atuantes no navio e atualiza velocidade e carga transportada
+            #no fim, da um yield com um tempo pequeno
+      
+    def monitor(self, env, guindaste, constante_velocidade):
+        
+        global armazem
+        debugMonitor = True
+        
         if P.debug:
-            print ('%s classe %i termina operação no berço %i em %.2f' %(self.name, self.classe, self.berco, env.now))
+            print("> %s inicializa o monitor" %self.name)
+           #altera informacoes para cada guindaste
+            yield (guindaste.ocupa(env, self.name)) ########
+            
+        start = env.now
+        self.velocidade = constante_velocidade*self.guindastes
+        self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
+                    
+        while self.tempo_restante > 0:
+            if debugMonitor:
+                print(">> %s carga faltante %d, velocidade %d, tempo esperado %.2f" %(self.name,(self.carga - self.carga_total_transferida), self.velocidade, self.tempo_restante))
 
-    
-
+            yield env.timeout(5)
+            self.velocidade = constante_velocidade * self.guindastes
+            tempo = env.now - start
+            carga_transferida = self.velocidade*tempo
+            self.carga_total_transferida += carga_transferida
+            armazem.put(carga_transferida)
+            self.tempo_restante = (self.carga - self.carga_total_transferida)/self.velocidade
+ 
+ 
     def desatraca(self, env, berco):
+        
         # rotina de desatracação
-        for i in range (self.guindastes):
-            yield Guindaste.desocupa(self.guindastes[i])
-            yield guindastesStore.put(self.guindastes[i])
+        for guindaste in self.set_guindastes:
+            yield guindaste.desocupa(env)
+            yield guindastesStore.put(guindaste)
             if P.debug:
                 print("Guindaste %i desocupado" %Guindaste.getNumber(self.guindastes[i]))
                 
@@ -198,8 +199,8 @@ class Navio(object):
     def funcao_quebra(self, env):
         global checar_quebra
         while True:
-            for i in range(len(self.lista_guindastes)):
-                if checar_quebra[self.lista_guindastes[i]] == 1:
+            for i in range(len(self.set_guindastes)):
+                if checar_quebra[self.set_guindastes[i]] == 1:
                     while checar_quebra[i]==1:
                         self.quebra_pausa = True
                     self.quebra_pausa = False

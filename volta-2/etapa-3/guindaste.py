@@ -100,9 +100,7 @@ def guindastes_disponiveis(env, guindastesStore, classe_navio):
     lista_guindastes = []
     for i in range (num_guindastes_disponiveis):
         lista_guindastes.append(guindastesStore.items[i])
-    
-    if P.debug:
-        print("Numero de guindastes disponiveis ", num_guindastes_disponiveis)
+
     return num_guindastes_disponiveis
     
 
