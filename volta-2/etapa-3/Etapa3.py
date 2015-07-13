@@ -33,7 +33,7 @@ numBercos = 2
 #checar_quebra = [0, 0, 0] #0 corresponde a funcionamento e 1 a quebra
 janelaClasse = [[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]],[[8.0,12.0], [18.0,22.0]]]
 naviosFila = 0
-CAPACIDADE = 1000000 #capacidade armazem
+CAPACIDADE = 100000 #capacidade armazem
 
 
 class Navio(object):
